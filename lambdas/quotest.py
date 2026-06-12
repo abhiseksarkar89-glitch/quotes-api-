@@ -35,5 +35,7 @@ def handler(event, context):
         "headers": {
             "Content-Type": "application/json"
         },
-        "body": json.dumps(item)
+        "body": json.dumps({
+            "Quote": "Hey Abhisek!"
+        })
     }
