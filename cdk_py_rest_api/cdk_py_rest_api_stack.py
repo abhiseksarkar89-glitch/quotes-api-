@@ -29,6 +29,14 @@ class CdkPyRestApiStack(Stack):
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=RemovalPolicy.DESTROY
         )
+        
+        log_group = logs.LogGroup(
+            self,
+            "QuotesLambdaLogGroup",
+            log_group_name=f"/aws/lambda/quotesHandlerLambda",
+            retention=logs.RetentionDays.ONE_WEEK,
+            removal_policy=RemovalPolicy.DESTROY
+        )
 
         # Create Lambda function
         handler_function = _lambda.Function(
@@ -41,8 +49,7 @@ class CdkPyRestApiStack(Stack):
             environment={
                 "MY_TABLE": table.table_name,
                 "LOG_LEVEL": "DEBUG"
-            },
-            log_retention=logs.RetentionDays.ONE_WEEK
+            }
         )
 
         # Lambda invocation metric
@@ -70,10 +77,13 @@ class CdkPyRestApiStack(Stack):
         # IMPORTANT Permission to scan the Dynamo DB 
         table.grant_read_write_data(handler_function)
 
+
+
+
+
         # Create API Gateway
         api = apigateway.RestApi(
-            self, "quotesPyApi",
-            
+            self, "quotesPyApi",     
         )
 
         # Create /quotes endpoint
