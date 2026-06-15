@@ -6,6 +6,10 @@ from aws_cdk import (
     aws_apigateway as apigateway,
     aws_dynamodb as dynamodb,
     aws_logs as logs,
+    aws_cloudwatch as cloudwatch, Duration,
+    aws_sns as sns,
+    aws_sns_subscriptions as subs,
+    aws_cloudwatch_actions as snsAction,
     # aws_sqs as sqs,
 )
 from constructs import Construct
@@ -15,7 +19,7 @@ class CdkPyRestApiStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-         # Create DynamoDB table
+        # Create DynamoDB table
         table = dynamodb.Table(
             self, "dyn-quotes-table",
             partition_key=dynamodb.Attribute(
@@ -26,7 +30,7 @@ class CdkPyRestApiStack(Stack):
             removal_policy=RemovalPolicy.DESTROY
         )
 
-         # Create Lambda function
+        # Create Lambda function
         handler_function = _lambda.Function(
             self, "quotesHandlerLambda",
             runtime=_lambda.Runtime.PYTHON_3_12,
@@ -40,8 +44,28 @@ class CdkPyRestApiStack(Stack):
             },
             log_retention=logs.RetentionDays.ONE_WEEK
         )
+
+        # Lambda invocation metric
+        invocation_metric = handler_function.metric_invocations(
+            period = Duration.minutes(1)
+        )
+        # Alarm for 5 invocations
+        invocation_alarm = cloudwatch.Alarm(
+            self, "LambdaInvocationAlarm" ,
+            metric=invocation_metric,
+            threshold= 5,
+            evaluation_periods=1,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD
+        )
         
-    #  IMPORTANT Permission to scan the Dynamo DB 
+        # Add email notification
+        topic = sns.Topic(self,"AlarmTopic")
+        topic.add_subscription(
+            subs.EmailSubscription("abhisek.sarkar@capgemini.com")
+        )
+        invocation_alarm.add_alarm_action(snsAction(topic))
+
+        # IMPORTANT Permission to scan the Dynamo DB 
         table.grant_read_write_data(handler_function)
 
         # Create API Gateway
