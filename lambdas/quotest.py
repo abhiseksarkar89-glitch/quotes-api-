@@ -97,6 +97,7 @@ def handler(event, context):
             logger.info("Processing GET request for all quotes")
 
             response = table.scan()
+            logger.debug(f"Response : {response}")
             items = response.get("Items", [])
 
             logger.debug(f"Fetched {len(items)} quotes")
