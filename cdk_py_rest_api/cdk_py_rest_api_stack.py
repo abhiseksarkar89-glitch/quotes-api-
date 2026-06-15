@@ -5,6 +5,7 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_apigateway as apigateway,
     aws_dynamodb as dynamodb,
+    aws_logs as logs,
     # aws_sqs as sqs,
 )
 from constructs import Construct
@@ -14,7 +15,7 @@ class CdkPyRestApiStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-         # ✅ Create DynamoDB table
+         # Create DynamoDB table
         table = dynamodb.Table(
             self, "dyn-quotes-table",
             partition_key=dynamodb.Attribute(
@@ -25,7 +26,7 @@ class CdkPyRestApiStack(Stack):
             removal_policy=RemovalPolicy.DESTROY
         )
 
-         # ✅ Create Lambda function
+         # Create Lambda function
         handler_function = _lambda.Function(
             self, "quotesHandlerLambda",
             runtime=_lambda.Runtime.PYTHON_3_12,
@@ -33,20 +34,24 @@ class CdkPyRestApiStack(Stack):
                 os.path.join(os.path.dirname(__file__), "../lambdas")
             ),
             handler="quotest.handler",
-           
+            environment={
+                "MY_TABLE": table.table_name
+            },
+            log_retention=logs.RetentionDays.ONE_WEEK
         )
+        
+    #  IMPORTANT Permission to scan the Dynamo DB 
+        table.grant_read_write_data(handler_function)
 
-        # ✅ Create API Gateway
+        # Create API Gateway
         api = apigateway.RestApi(
             self, "quotesPyApi",
             
         )
 
-        # ✅ Create /quotes endpoint
+        # Create /quotes endpoint
         quotes_resource = api.root.add_resource("myquotes")
 
-        # ✅ Add GET method with Lambda integration
-        quotes_resource.add_method(
-            "GET",
-            apigateway.LambdaIntegration(handler_function)
-        )
+        #  Add GET method with Lambda integration
+        quotes_resource.add_method("GET", apigateway.LambdaIntegration(handler_function))
+        quotes_resource.add_method("POST", apigateway.LambdaIntegration(handler_function))
