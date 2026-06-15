@@ -33,7 +33,7 @@ class CdkPyRestApiStack(Stack):
         log_group = logs.LogGroup(
             self,
             "QuotesLambdaLogGroup",
-            #log_group_name=f"/aws/lambda/quotesHandlerLambda",
+            log_group_name=f"/aws/lambda/quotesHandlerLambda",
             retention=logs.RetentionDays.ONE_WEEK,
             removal_policy=RemovalPolicy.DESTROY
         )
