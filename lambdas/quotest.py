@@ -8,7 +8,17 @@ from decimal import Decimal
 
 # ✅ Configure Logging
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+
+
+# ✅ Read from environment
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logger.setLevel(log_level)
+
+
+# ✅ CRITICAL FIX (this is why DEBUG was not working)
+for handler in logger.handlers:
+    handler.setLevel(log_level)
+
 
 
 # ✅ DynamoDB Setup

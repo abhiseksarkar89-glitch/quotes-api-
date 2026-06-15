@@ -36,6 +36,7 @@ class CdkPyRestApiStack(Stack):
             handler="quotest.handler",
             environment={
                 "MY_TABLE": table.table_name
+                "LOG_LEVEL": "DEBUG"
             },
             log_retention=logs.RetentionDays.ONE_WEEK
         )
