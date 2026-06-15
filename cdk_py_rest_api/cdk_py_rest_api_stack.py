@@ -63,7 +63,9 @@ class CdkPyRestApiStack(Stack):
         topic.add_subscription(
             subs.EmailSubscription("abhisek.sarkar@capgemini.com")
         )
-        invocation_alarm.add_alarm_action(snsAction(topic))
+        invocation_alarm.add_alarm_action(
+            snsAction.SnsAction(topic)
+        )
 
         # IMPORTANT Permission to scan the Dynamo DB 
         table.grant_read_write_data(handler_function)
