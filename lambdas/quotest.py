@@ -111,7 +111,7 @@ def handler(event, context):
         # DELETE QUOTES BY ID
         elif http_method == "DELETE" :
             logger.info("Processing Delete request by quotes ID")
-            logger.debug("Quotes ID : {quote_id}")
+            logger.debug(f"Quotes ID : {quote_id}")
                 
             if not path_parameters or "id" not in path_parameters:
                 return build_response(400,{
@@ -126,7 +126,7 @@ def handler(event, context):
             )
             return build_response(200,{
                 "success": True,
-                "message": "Quote with id {quote_id} deleted successfully",
+                "message": f"Quote with id {quote_id} deleted successfully",
             })
 
         #  METHOD NOT ALLOWED
