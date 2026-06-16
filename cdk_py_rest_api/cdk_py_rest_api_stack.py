@@ -53,7 +53,7 @@ class CdkPyRestApiStack(Stack):
             self, "quotesPyApi",     
         )
 
-        # Create /quotes endpoint
+        # Create /myquotes and /myquotes/{id} endpoint
         quotes_resource = api.root.add_resource("myquotes")
         quotes_id_resource = quotes_resource.add_resource("{id}")
 
@@ -65,7 +65,7 @@ class CdkPyRestApiStack(Stack):
         log_group = logs.LogGroup(
             self,"QuotesLambdaLogGroup",
             log_group_name=f"/aws/lambda/quotesHandlerLambda",
-            retention=logs.RetentionDays.ONE_WEEK,
+            retention=logs.RetentionDays.ONE_DAY,
             removal_policy=RemovalPolicy.DESTROY
         )
 
