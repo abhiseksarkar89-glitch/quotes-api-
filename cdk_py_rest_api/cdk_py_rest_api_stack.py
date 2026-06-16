@@ -20,6 +20,35 @@ class CdkPyRestApiStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
 
+        # Create DynamoDB table
+        table = dynamodb.Table(
+            self, "dyn-quotes-table",
+            partition_key=dynamodb.Attribute(
+                name="id",
+                type=dynamodb.AttributeType.STRING
+            ),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.DESTROY
+        )
+        
+        # Create Lambda function
+        handler_function = _lambda.Function(
+            self, "quotesHandlerLambda",
+            runtime=_lambda.Runtime.PYTHON_3_12,
+            code=_lambda.Code.from_asset(
+                os.path.join(os.path.dirname(__file__), "../lambdas")
+            ),
+            handler="quotest.handler", #fileName.functionName()
+            environment={
+                "MY_TABLE": table.table_name,
+                "LOG_LEVEL": "DEBUG"
+            }
+        )
+        
+        # IMPORTANT Permission to scan the Dynamo DB 
+        table.grant_read_write_data(handler_function)
+
+
         # Create API Gateway
         api = apigateway.RestApi(
             self, "quotesPyApi",     
@@ -34,49 +63,21 @@ class CdkPyRestApiStack(Stack):
         quotes_resource.add_method("POST", apigateway.LambdaIntegration(handler_function))
         quotes_id_resource.add_method("DELETE",apigateway.LambdaIntegration(handler_function)) 
 
-        # Create DynamoDB table
-        table = dynamodb.Table(
-            self, "dyn-quotes-table",
-            partition_key=dynamodb.Attribute(
-                name="id",
-                type=dynamodb.AttributeType.STRING
-            ),
-            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=RemovalPolicy.DESTROY
-        )
-
-        # Create Lambda function
-        handler_function = _lambda.Function(
-            self, "quotesHandlerLambda",
-            runtime=_lambda.Runtime.PYTHON_3_12,
-            code=_lambda.Code.from_asset(
-                os.path.join(os.path.dirname(__file__), "../lambdas")
-            ),
-            handler="quotest.handler", #fileName.functionName()
-            environment={
-                "MY_TABLE": table.table_name,
-                "LOG_LEVEL": "DEBUG"
-            }
-        )
-
-        # Permission to scan the Dynamo DB 
-        table.grant_read_write_data(handler_function)
-
-
-        # Createing Log Group in Cloudwatch
         log_group = logs.LogGroup(
             self,
             "QuotesLambdaLogGroup",
             log_group_name=f"/aws/lambda/quotesHandlerLambda",
             retention=logs.RetentionDays.ONE_WEEK,
             removal_policy=RemovalPolicy.DESTROY
-        ) 
+        )
+
+
+
 
         # Lambda invocation metric
         invocation_metric = handler_function.metric_invocations(
             period = Duration.minutes(1)
         )
-        
         # Alarm for 5 invocations
         invocation_alarm = cloudwatch.Alarm(
             self, "LambdaInvocationAlarm" ,
