@@ -9,22 +9,17 @@ from decimal import Decimal
 #  Configure Logging
 logger = logging.getLogger()
 
-
 #  Read from environment
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 logger.setLevel(log_level)
-
 
 #  CRITICAL FIX (this is why DEBUG was not working)
 for handler in logger.handlers:
     handler.setLevel(log_level)
 
-
-
 #  DynamoDB Setup
 dynamodb = boto3.resource("dynamodb", region_name=os.getenv("AWS_REGION", "us-east-1"))
 table = dynamodb.Table(os.environ["MY_TABLE"])
-
 
 #  Custom JSON Encoder (Decimal to float)
 class DecimalEncoder(json.JSONEncoder):
@@ -32,7 +27,6 @@ class DecimalEncoder(json.JSONEncoder):
         if isinstance(obj, Decimal):
             return float(obj)
         return super().default(obj)
-
 
 #  Common Response Builder
 def build_response(status_code, body):
@@ -90,8 +84,7 @@ def handler(event, context):
                 "message": "Quote created successfully",
                 "data": item
             })
-
-
+        
         #  GET ALL QUOTES
         elif http_method == "GET":
             logger.info("Processing GET request for all quotes")

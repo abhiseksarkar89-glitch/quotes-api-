@@ -10,7 +10,6 @@ from aws_cdk import (
     aws_sns as sns,
     aws_sns_subscriptions as subs,
     aws_cloudwatch_actions as snsAction,
-    # aws_sqs as sqs,
 )
 from constructs import Construct
 import os
@@ -44,7 +43,7 @@ class CdkPyRestApiStack(Stack):
                 "LOG_LEVEL": "DEBUG"
             }
         )
-        
+           
         # IMPORTANT Permission to scan the Dynamo DB 
         table.grant_read_write_data(handler_function)
 
@@ -64,15 +63,11 @@ class CdkPyRestApiStack(Stack):
         quotes_id_resource.add_method("DELETE",apigateway.LambdaIntegration(handler_function)) 
 
         log_group = logs.LogGroup(
-            self,
-            "QuotesLambdaLogGroup",
+            self,"QuotesLambdaLogGroup",
             log_group_name=f"/aws/lambda/quotesHandlerLambda",
             retention=logs.RetentionDays.ONE_WEEK,
             removal_policy=RemovalPolicy.DESTROY
         )
-
-
-
 
         # Lambda invocation metric
         invocation_metric = handler_function.metric_invocations(
