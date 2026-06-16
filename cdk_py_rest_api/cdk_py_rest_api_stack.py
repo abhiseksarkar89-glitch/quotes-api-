@@ -19,6 +19,21 @@ class CdkPyRestApiStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
+
+        # Create API Gateway
+        api = apigateway.RestApi(
+            self, "quotesPyApi",     
+        )
+
+        # Create /quotes endpoint
+        quotes_resource = api.root.add_resource("myquotes")
+        quotes_id_resource = quotes_resource.add_resource("{id}")
+
+        #  Add GET/PUT/DELETE method with Lambda integration
+        quotes_resource.add_method("GET", apigateway.LambdaIntegration(handler_function))
+        quotes_resource.add_method("POST", apigateway.LambdaIntegration(handler_function))
+        quotes_id_resource.add_method("DELETE",apigateway.LambdaIntegration(handler_function)) 
+
         # Create DynamoDB table
         table = dynamodb.Table(
             self, "dyn-quotes-table",
@@ -27,14 +42,6 @@ class CdkPyRestApiStack(Stack):
                 type=dynamodb.AttributeType.STRING
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=RemovalPolicy.DESTROY
-        )
-        
-        log_group = logs.LogGroup(
-            self,
-            "QuotesLambdaLogGroup",
-            log_group_name=f"/aws/lambda/quotesHandlerLambda",
-            retention=logs.RetentionDays.ONE_WEEK,
             removal_policy=RemovalPolicy.DESTROY
         )
 
@@ -52,10 +59,24 @@ class CdkPyRestApiStack(Stack):
             }
         )
 
+        # Permission to scan the Dynamo DB 
+        table.grant_read_write_data(handler_function)
+
+
+        # Createing Log Group in Cloudwatch
+        log_group = logs.LogGroup(
+            self,
+            "QuotesLambdaLogGroup",
+            log_group_name=f"/aws/lambda/quotesHandlerLambda",
+            retention=logs.RetentionDays.ONE_WEEK,
+            removal_policy=RemovalPolicy.DESTROY
+        ) 
+
         # Lambda invocation metric
         invocation_metric = handler_function.metric_invocations(
             period = Duration.minutes(1)
         )
+        
         # Alarm for 5 invocations
         invocation_alarm = cloudwatch.Alarm(
             self, "LambdaInvocationAlarm" ,
@@ -74,23 +95,9 @@ class CdkPyRestApiStack(Stack):
             snsAction.SnsAction(topic)
         )
 
-        # IMPORTANT Permission to scan the Dynamo DB 
-        table.grant_read_write_data(handler_function)
 
 
 
 
 
-        # Create API Gateway
-        api = apigateway.RestApi(
-            self, "quotesPyApi",     
-        )
 
-        # Create /quotes endpoint
-        quotes_resource = api.root.add_resource("myquotes")
-        quotes_id_resource = quotes_resource.add_resource("{id}")
-
-        #  Add GET/PUT/DELETE method with Lambda integration
-        quotes_resource.add_method("GET", apigateway.LambdaIntegration(handler_function))
-        quotes_resource.add_method("POST", apigateway.LambdaIntegration(handler_function))
-        quotes_id_resource.add_method("DELETE",apigateway.LambdaIntegration(handler_function)) 
