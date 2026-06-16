@@ -6,27 +6,27 @@ import logging
 from decimal import Decimal
 
 
-# ✅ Configure Logging
+#  Configure Logging
 logger = logging.getLogger()
 
 
-# ✅ Read from environment
+#  Read from environment
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 logger.setLevel(log_level)
 
 
-# ✅ CRITICAL FIX (this is why DEBUG was not working)
+#  CRITICAL FIX (this is why DEBUG was not working)
 for handler in logger.handlers:
     handler.setLevel(log_level)
 
 
 
-# ✅ DynamoDB Setup
+#  DynamoDB Setup
 dynamodb = boto3.resource("dynamodb", region_name=os.getenv("AWS_REGION", "us-east-1"))
 table = dynamodb.Table(os.environ["MY_TABLE"])
 
 
-# ✅ Custom JSON Encoder (Decimal to float)
+#  Custom JSON Encoder (Decimal to float)
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Decimal):
@@ -34,7 +34,7 @@ class DecimalEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-# ✅ Common Response Builder
+#  Common Response Builder
 def build_response(status_code, body):
     return {
         "statusCode": status_code,
@@ -45,7 +45,7 @@ def build_response(status_code, body):
     }
 
 
-# ✅ Lambda Handler
+#  Lambda Handler
 def handler(event, context):
     logger.info("Received request")
     logger.debug(f"Full event: {json.dumps(event)}")
@@ -55,7 +55,7 @@ def handler(event, context):
     quote_id = path_parameters.get("id")
 
     try:
-        # ✅ CREATE QUOTE
+        #  CREATE QUOTE
         if http_method == "POST":
             logger.info("Processing POST request")
 
@@ -92,8 +92,8 @@ def handler(event, context):
             })
 
 
-        # ✅ GET ALL QUOTES
-        elif http_method == "GET" and not quote_id:
+        #  GET ALL QUOTES
+        elif http_method == "GET":
             logger.info("Processing GET request for all quotes")
 
             response = table.scan()
@@ -107,9 +107,29 @@ def handler(event, context):
                 "message": "Quotes fetched successfully",
                 "data": items
             })
+        
+        # DELETE QUOTES BY ID
+        elif http_method == "DELETE" :
+            logger.info("Processing Delete request by quotes ID")
+            logger.debug("Quotes ID : {quote_id}")
+                
+            if not path_parameters or "id" not in path_parameters:
+                return build_response(400,{
+                    "success": False,
+                    "message": "ID is required"
+                })
 
+            table.delete_item(
+                Key = {
+                    "id" : quote_id
+                }
+            )
+            return build_response(200,{
+                "success": True,
+                "message": "Quote with id {quote_id} deleted successfully",
+            })
 
-        # ✅ METHOD NOT ALLOWED
+        #  METHOD NOT ALLOWED
         else:
             logger.warning(f"Unsupported method: {http_method}")
 

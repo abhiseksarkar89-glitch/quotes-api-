@@ -45,7 +45,7 @@ class CdkPyRestApiStack(Stack):
             code=_lambda.Code.from_asset(
                 os.path.join(os.path.dirname(__file__), "../lambdas")
             ),
-            handler="quotest.handler",
+            handler="quotest.handler", #fileName.functionName()
             environment={
                 "MY_TABLE": table.table_name,
                 "LOG_LEVEL": "DEBUG"
@@ -89,6 +89,7 @@ class CdkPyRestApiStack(Stack):
         # Create /quotes endpoint
         quotes_resource = api.root.add_resource("myquotes")
 
-        #  Add GET method with Lambda integration
+        #  Add GET/PUT/DELETE method with Lambda integration
         quotes_resource.add_method("GET", apigateway.LambdaIntegration(handler_function))
         quotes_resource.add_method("POST", apigateway.LambdaIntegration(handler_function))
+        quotes_resource.add_resource({"id"}).add_method("DELETE",apigateway.LambdaIntegration(handler_function)) 
