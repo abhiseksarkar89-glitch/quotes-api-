@@ -88,8 +88,9 @@ class CdkPyRestApiStack(Stack):
 
         # Create /quotes endpoint
         quotes_resource = api.root.add_resource("myquotes")
+        quotes_id_resource = quotes_resource.add_resource({"id"})
 
         #  Add GET/PUT/DELETE method with Lambda integration
         quotes_resource.add_method("GET", apigateway.LambdaIntegration(handler_function))
         quotes_resource.add_method("POST", apigateway.LambdaIntegration(handler_function))
-        quotes_resource.add_resource({"id"}).add_method("DELETE",apigateway.LambdaIntegration(handler_function)) 
+        quotes_id_resource.add_method("DELETE",apigateway.LambdaIntegration(handler_function)) 
