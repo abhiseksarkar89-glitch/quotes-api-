@@ -29,7 +29,7 @@ class CdkPyRestApiStack(Stack):
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=RemovalPolicy.DESTROY
         )
-        
+        #updfateing
         # Create Lambda function
         handler_function = _lambda.Function(
             self, "quotesHandlerLambda",
