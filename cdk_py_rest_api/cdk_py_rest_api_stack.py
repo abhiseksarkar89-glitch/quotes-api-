@@ -44,7 +44,7 @@ class CdkPyRestApiStack(Stack):
             }
         )
            
-        # IMPORTANT Permission to scan the Dynamo DB 
+        # Permission to scan the Dynamo DB 
         table.grant_read_write_data(handler_function)
 
 
