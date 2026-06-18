@@ -52,7 +52,12 @@ class CdkPyRestApiStack(Stack):
         # Create API Gateway
         api = apigateway.RestApi(
             self, f"quotesPyApi-{env_name}",    
-            rest_api_name=f"quotes-api-{env_name}" 
+            rest_api_name=f"quotes-api-{env_name}" ,
+            
+            deploy_options=apigateway.StageOptions(
+                    stage_name=env_name  
+                )
+
         )
 
         # Create /myquotes and /myquotes/{id} endpoint
