@@ -1,3 +1,4 @@
+
 name: AWS CDK Multi Environment Deployment
 
 on:
@@ -32,3 +33,106 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: CDK Synth DEV
+        run: cdk synth -c env=dev
+
+
+  deploy-dev:
+    name: Deploy to DEV
+    needs: synth
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: npm install -g aws-cdk
+      - run: pip install -r requirements.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Debug stacks
+        run: cdk list -c env=dev
+
+      - name: Deploy DEV
+        run: cdk deploy --all -c env=dev --require-approval never
+
+
+  deploy-staging:
+    name: Deploy to STAGING
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: npm install -g aws-cdk
+      - run: pip install -r requirements.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Debug stacks
+        run: cdk list -c env=stage
+
+      - name: Deploy STAGING
+        run: cdk deploy --all -c env=stage --require-approval never
+
+
+  deploy-production:
+    name: Deploy to PRODUCTION
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: npm install -g aws-cdk
+      - run: pip install -r requirements.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Debug stacks
+        run: cdk list -c env=prod
+
+      - name: Deploy PRODUCTION
+        run: cdk deploy --all -c env=prod --require-approval never
