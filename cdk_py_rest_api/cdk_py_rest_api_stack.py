@@ -15,13 +15,13 @@ from constructs import Construct
 import os
 class CdkPyRestApiStack(Stack):
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str,env_name: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
 
         # Create DynamoDB table
         table = dynamodb.Table(
-            self, "dyn-quotes-table",
+            self, f"dyn-quotes-table-{env_name}",
             partition_key=dynamodb.Attribute(
                 name="id",
                 type=dynamodb.AttributeType.STRING
@@ -32,7 +32,7 @@ class CdkPyRestApiStack(Stack):
         #updfateing
         # Create Lambda function
         handler_function = _lambda.Function(
-            self, "quotesHandlerLambda",
+            self, f"quotesHandlerLambda-{env_name}",
             runtime=_lambda.Runtime.PYTHON_3_12,
             code=_lambda.Code.from_asset(
                 os.path.join(os.path.dirname(__file__), "../lambdas")
@@ -40,7 +40,8 @@ class CdkPyRestApiStack(Stack):
             handler="quotest.handler", #fileName.functionName()
             environment={
                 "MY_TABLE": table.table_name,
-                "LOG_LEVEL": "DEBUG"
+                "LOG_LEVEL": "DEBUG",
+                "ENV": env_name
             }
         )
            
@@ -50,7 +51,8 @@ class CdkPyRestApiStack(Stack):
 
         # Create API Gateway
         api = apigateway.RestApi(
-            self, "quotesPyApi",     
+            self, f"quotesPyApi-{env_name}",    
+            rest_api_name=f"quotes-api-{env_name}" 
         )
 
         # Create /myquotes and /myquotes/{id} endpoint
@@ -62,12 +64,7 @@ class CdkPyRestApiStack(Stack):
         quotes_resource.add_method("POST", apigateway.LambdaIntegration(handler_function))
         quotes_id_resource.add_method("DELETE",apigateway.LambdaIntegration(handler_function)) 
 
-        log_group = logs.LogGroup(
-            self,"QuotesLambdaLogGroup",
-            log_group_name=f"/aws/lambda/quotesHandlerLambda",
-            retention=logs.RetentionDays.ONE_DAY,
-            removal_policy=RemovalPolicy.DESTROY
-        )
+
 
         # Lambda invocation metric
         invocation_metric = handler_function.metric_invocations(

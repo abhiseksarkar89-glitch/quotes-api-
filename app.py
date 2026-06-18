@@ -7,7 +7,9 @@ from cdk_py_rest_api.cdk_py_rest_api_stack import CdkPyRestApiStack
 
 
 app = cdk.App()
-CdkPyRestApiStack(app, "CdkPyRestApiStack",
+env_name = app.node.try_get_context("env") or "dev"
+CdkPyRestApiStack(app, f"CdkPyRestApiStack-{env_name}",
+                 env_name=env_name
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
     # but a single synthesized template can be deployed anywhere.
